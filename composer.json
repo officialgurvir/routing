@@ -1,0 +1,16 @@
+{
+    "name": "nest/routing",
+    "description": "Routing package for nest framework",
+    "autoload": {
+        "psr-4": {
+            "Nest\\Routing\\": "core/"
+        }
+    },
+    "authors": [
+        {
+            "name": "officialgurvir",
+            "email": "officialgurvir2007@gmail.com"
+        }
+    ],
+    "require": {}
+}
