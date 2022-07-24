@@ -1,6 +1,6 @@
 <?php
 
-namespace Nest;
+namespace Nest\Routing;
 
 class Router
 {
