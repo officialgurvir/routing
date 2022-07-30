@@ -17,7 +17,18 @@ class Request
         $this->method = $_SERVER['REQUEST_METHOD'];
 
         if ($this->method == 'POST') {
+            $valid = true;
             $this->parameters = $_POST;
+
+            if (!isset($this->parameters['csrf_token'])) $valid = false;
+            else if (!isset($_SESSION['csrf_token'])) $valid = false;
+            else if ($this->parameters['csrf_token'] != $_SESSION['csrf_token']) $valid = false;
+
+            if (!$valid) {
+                die(
+                    file_get_contents(__DIR__.'/templates/index.php')
+                );
+            }
         } else {
             $this->parameters = $_GET;
         }

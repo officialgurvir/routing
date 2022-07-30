@@ -1,7 +1,6 @@
 {
     "name": "nest/routing",
     "description": "A routing package of nest framework.",
-    "version": "v1.0.1",
     "homepage": "https://github.com/officialgurvir/nest",
     "autoload": {
         "psr-4": {

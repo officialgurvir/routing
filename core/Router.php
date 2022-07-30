@@ -4,25 +4,58 @@ namespace Nest\Routing;
 
 class Router
 {
+    private array $environment = [];
     private static array $paths = [
         'GET'  => [],
         'POST' => [],
     ];
-
-    private static function _get($path, $callback)
+    
+    public static function get($path, $callback)
     {
         self::$paths['GET'][$path] = [
-            new $callback[0](),
+            $callback[0],
+            $callback[1],
+        ];
+
+        return ;
+    }
+
+    public static function post($path, $callback)
+    {
+        self::$paths['POST'][$path] = [
+            $callback[0],
             $callback[1],
         ];
     }
 
-    private static function _post($path, $callback)
+    public static function put($path, $callback)
     {
-        self::$paths['POST'][$path] = [
-            new $callback[0](),
+        self::$paths['PUT'][$path] = [
+            $callback[0],
             $callback[1],
         ];
+    }
+
+    public static function delete($path, $callback)
+    {
+        self::$paths['DELETE'][$path] = [
+            $callback[0],
+            $callback[1],
+        ];
+    }
+
+    public static function match(array $requests, $path, $callback) {
+        foreach ($requests as $request) {
+            Router::$request($path, $callback);
+        }
+    }
+
+    public static function url(string $path, string $method) {
+        return ;
+    }
+
+    public static function any(string $path, $callback) {
+        Router::match(['GET', 'POST', 'PUT', 'DELETE'], $path, $callback);
     }
 
     /**
@@ -65,7 +98,7 @@ class Router
 
         $code = call_user_func_array(
             [
-                new $class(),
+                new $class($this->environment),
                 $method,
             ],
             $arguments
@@ -76,36 +109,25 @@ class Router
         return true;
     }
 
-    public function __call($name, $arguments)
-    {
-        $method = '_'.$name;
-        $this->$method(...$arguments);
-    }
-
-    public static function __callStatic($name, $arguments)
-    {
-        $instance = new self();
-        $method = '_'.$name;
-
-        $instance->$method(...$arguments);
-    }
-
     /**
      * Does all the routing for you.
      * TODO: fucntionResolver is still left.
      *
      * @return void
      */
-    public function __destruct()
+    public function execute(array $environment)
     {
+        $prefix = str_replace($_SERVER['DOCUMENT_ROOT'], '', APPLICATION_DIRECTORY);
+
+        $this->environment = $environment;
         $request = new Request();
 
-        $path = $request->path;
+        $path = str_replace($prefix, '', $request->path);
         $method = $request->method;
         $callback = self::$paths[$method][$path];
 
         if ($callback) {
-            $this->classResolver($callback);
+            $this->_classResolver($callback);
         }
     }
 }
