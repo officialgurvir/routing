@@ -26,7 +26,7 @@ class Request
 
             if (!$valid) {
                 die(
-                    file_get_contents(__DIR__.'/templates/index.php')
+                    file_get_contents(__DIR__.'/templates/page_expired.php')
                 );
             }
         } else {
