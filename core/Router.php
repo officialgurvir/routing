@@ -9,53 +9,79 @@ class Router
         'GET'  => [],
         'POST' => [],
     ];
-    
-    public static function get($path, $callback)
-    {
-        self::$paths['GET'][$path] = [
-            $callback[0],
-            $callback[1],
-        ];
 
-        return ;
+    public static function get($path, $callback, $extend = null)
+    {
+        if ($extend == null)
+            self::$paths['GET'][$path] = [
+                $callback[0],
+                $callback[1],
+            ];
+        else
+            self::$paths['GET'][$path] = [
+                $extend[0],
+                $extend[1],
+                $callback
+            ];
+
+        return;
     }
 
-    public static function post($path, $callback)
+    public static function post($path, $callback, $extend = null)
     {
-        self::$paths['POST'][$path] = [
-            $callback[0],
-            $callback[1],
-        ];
+        if ($extend == null)
+            self::$paths['POST'][$path] = [
+                $callback[0],
+                $callback[1],
+            ];
+        else
+            self::$paths['POST'][$path] = [
+                $extend[0],
+                $extend[1],
+                $callback
+            ];
     }
 
-    public static function put($path, $callback)
+    public static function put($path, $callback, $extend = null)
     {
-        self::$paths['PUT'][$path] = [
-            $callback[0],
-            $callback[1],
-        ];
+        if ($extend == null)
+            self::$paths['PUT'][$path] = [
+                $callback[0],
+                $callback[1],
+            ];
+        else
+            self::$paths['PUT'][$path] = [
+                $extend[0],
+                $extend[1],
+                $callback
+            ];
     }
 
-    public static function delete($path, $callback)
+    public static function delete($path, $callback, $extend = null)
     {
-        self::$paths['DELETE'][$path] = [
-            $callback[0],
-            $callback[1],
-        ];
+        if ($extend == null)
+            self::$paths['DELETE'][$path] = [
+                $callback[0],
+                $callback[1],
+            ];
+        else
+            self::$paths['DELETE'][$path] = [
+                $extend[0],
+                $extend[1],
+                $callback
+            ];
     }
 
-    public static function match(array $requests, $path, $callback) {
+    public static function match(array $requests, $path, $callback, $extend)
+    {
         foreach ($requests as $request) {
-            Router::$request($path, $callback);
+            Router::$request($path, $callback, $extend);
         }
     }
 
-    public static function url(string $path, string $method) {
-        return ;
-    }
-
-    public static function any(string $path, $callback) {
-        Router::match(['GET', 'POST', 'PUT', 'DELETE'], $path, $callback);
+    public static function any(string $path, $callback, $extend)
+    {
+        Router::match(['GET', 'POST', 'PUT', 'DELETE'], $path, $callback, $extend);
     }
 
     /**
@@ -87,15 +113,26 @@ class Router
         $class = $callback[0];
         $method = $callback[1];
 
-        $reflection = new \ReflectionClass($class);
-        $parameters = $reflection->getMethod($method)->getParameters();
-        $arguments = [];
+        if (isset($callback[2])) {
+            $instance = new \App\Http\Kernal;
+            $middlewares = $instance->middleware($callback[2]);
 
-        foreach ($parameters as $parameter) {
-            $dependency = $parameter->getType()->getName();
-            $arguments[] = new $dependency();
+            foreach ($middlewares as $middleware) {
+                $output = call_user_func_array(
+                    [
+                        new $middleware,
+                        'handle'
+                    ], 
+                    $this->dependancies($middleware, 'handle')
+                );
+
+                if (!$output) die(
+                    file_get_contents(__DIR__.'/templates/unauthorized.php')
+                );
+            }
         }
-
+        
+        $arguments = $this->dependancies($class, $method);
         $code = call_user_func_array(
             [
                 new $class($this->environment),
@@ -107,6 +144,19 @@ class Router
         eval(sprintf(' ?> %s <?php ', $code));
 
         return true;
+    }
+
+    private function dependancies(string $class, string $method) {
+        $reflection = new \ReflectionClass($class);
+        $parameters = $reflection->getMethod($method)->getParameters();
+        $arguments = [];
+
+        foreach ($parameters as $parameter) {
+            $dependency = $parameter->getType()->getName();
+            $arguments[] = new $dependency();
+        }
+
+        return $arguments;
     }
 
     /**
